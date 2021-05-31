@@ -7,19 +7,28 @@
     "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "jest",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "postinstall": "rn-nodeify --install buffer,stream,assert,events,crypto,vm,process --hack && cd ios && pod install && cd .."
   },
   "dependencies": {
     "@react-native-clipboard/clipboard": "^1.7.0",
     "@synonymdev/react-native-lnurl": "link:../",
+    "assert": "^2.0.0",
+    "buffer": "^6.0.3",
+    "crypto": "^1.0.1",
+    "events": "^3.3.0",
+    "process": "^0.11.10",
     "react": "16.13.1",
     "react-native": "0.63.4",
-    "react-native-fs": "^2.18.0",
-    "react-native-zip-archive": "^6.0.3"
+    "react-native-crypto": "^2.2.0",
+    "react-native-randombytes": "^3.6.1",
+    "readable-stream": "^1.0.33",
+    "stream-browserify": "^1.0.0",
+    "vm-browserify": "^1.1.2"
   },
   "devDependencies": {
+    "@babel/runtime": "latest",
     "@babel/core": "^7.8.4",
-    "@babel/runtime": "^7.14.0",
     "@react-native-community/eslint-config": "^1.1.0",
     "@types/jest": "^25.2.3",
     "@types/react-native": "^0.63.2",
@@ -29,7 +38,8 @@
     "jest": "^25.1.0",
     "metro-react-native-babel-preset": "^0.59.0",
     "react-test-renderer": "16.13.1",
-    "typescript": "^3.8.3"
+    "rn-nodeify": "^10.3.0",
+    "typescript": "^3.8.3",
   },
   "jest": {
     "preset": "react-native",
@@ -41,5 +51,25 @@
       "json",
       "node"
     ]
+  },
+  "react-native": {
+    "crypto": "react-native-crypto",
+    "_stream_transform": "readable-stream/transform",
+    "_stream_readable": "readable-stream/readable",
+    "_stream_writable": "readable-stream/writable",
+    "_stream_duplex": "readable-stream/duplex",
+    "_stream_passthrough": "readable-stream/passthrough",
+    "stream": "stream-browserify",
+    "vm": "vm-browserify"
+  },
+  "browser": {
+    "crypto": "react-native-crypto",
+    "_stream_transform": "readable-stream/transform",
+    "_stream_readable": "readable-stream/readable",
+    "_stream_writable": "readable-stream/writable",
+    "_stream_duplex": "readable-stream/duplex",
+    "_stream_passthrough": "readable-stream/passthrough",
+    "stream": "stream-browserify",
+    "vm": "vm-browserify"
   }
 }

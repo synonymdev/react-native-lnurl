@@ -11,6 +11,9 @@
     "prettier",
     "no-null"
   ],
+  "globals": {
+    "localStorage": false
+  },
   "extends": [
     "@react-native-community",
     "standard-with-typescript",
