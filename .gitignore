@@ -1,0 +1,8 @@
+node_modules/
+.idea/
+dist/
+**.DS_Store
+android/build/
+android/local.properties
+android/.gradle/
+yarn-error.log
