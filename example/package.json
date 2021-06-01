@@ -8,7 +8,7 @@
     "start": "react-native start",
     "test": "jest",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "postinstall": "rn-nodeify --install buffer,stream,assert,events,crypto,vm,process --hack && cd ios && pod install && cd .."
+    "postinstall": "rn-nodeify --install buffer,stream,assert,events,crypto,vm,process,stream --hack && cd ios && pod install && cd .."
   },
   "dependencies": {
     "@react-native-clipboard/clipboard": "^1.7.0",
@@ -22,13 +22,14 @@
     "react-native": "0.63.4",
     "react-native-crypto": "^2.2.0",
     "react-native-randombytes": "^3.6.1",
-    "readable-stream": "^1.0.33",
-    "stream-browserify": "^1.0.0",
+    "readable-stream": "^3.6.0",
+    "stream": "^0.0.2",
+    "stream-browserify": "^3.0.0",
     "vm-browserify": "^1.1.2"
   },
   "devDependencies": {
-    "@babel/runtime": "latest",
     "@babel/core": "^7.8.4",
+    "@babel/runtime": "latest",
     "@react-native-community/eslint-config": "^1.1.0",
     "@types/jest": "^25.2.3",
     "@types/react-native": "^0.63.2",
@@ -39,7 +40,7 @@
     "metro-react-native-babel-preset": "^0.59.0",
     "react-test-renderer": "16.13.1",
     "rn-nodeify": "^10.3.0",
-    "typescript": "^3.8.3",
+    "typescript": "^3.8.3"
   },
   "jest": {
     "preset": "react-native",
