@@ -1,2 +1,14 @@
 # react-native-lnurl
-React Native LN-URL
+
+### Description
+
+## Getting started
+
+```bash
+yarn add @synonymdev/react-native-lnurl
+#or
+npm i -s @synonymdev/react-native-lnurl
+
+#rn-nodify is required
+yarn add rn-nodeify -D
+````
