@@ -34,7 +34,7 @@ export const lnAuth = async (
   network: EAvailableNetworks,
   params: LNURLAuthParams,
 ): Promise<Result<string>> => {
-  const res = await createAuthCallbackUrl(walletSeed, network, params);
+  const res = await createAuthCallbackUrl({walletSeed, network, params});
   if (res.isErr()) {
     return err(res.error);
   }

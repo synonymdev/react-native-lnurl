@@ -8,7 +8,7 @@ import {
 } from 'js-lnurl';
 import {err, ok, Result} from './utils/result';
 import {deriveLinkingKeys, signK1} from './signing';
-import {EAvailableNetworks} from './utils/types';
+import {AuthCallback, ChannelCallback, WithdrawCallback} from './utils/types';
 
 /**
  * Parses LNURL
@@ -42,11 +42,10 @@ export const getLNURLParams = async (
     const tag = 'tag' in params ? params.tag : '';
 
     switch (tag) {
-      case 'withdrawRequest': {
-        return ok(params);
-      }
-
-      case 'login': {
+      case 'withdrawRequest':
+      case 'login':
+      case 'channelRequest':
+      case 'payRequest': {
         return ok(params);
       }
     }
@@ -59,16 +58,16 @@ export const getLNURLParams = async (
 
 /**
  * Creates a authorization callback URL
- * @param callback
- * @param signature
- * @param linkingPublicKey
- * @returns {Ok<string>}
+ * @returns {Promise<Err<unknown> | Ok<string>>}
+ * @param params
+ * @param walletSeed
+ * @param network
  */
-export const createAuthCallbackUrl = async (
-  walletSeed: string,
-  network: EAvailableNetworks,
-  params: LNURLAuthParams,
-): Promise<Result<string>> => {
+export const createAuthCallbackUrl = async ({
+  params,
+  walletSeed,
+  network,
+}: AuthCallback): Promise<Result<string>> => {
   const keysRes = await deriveLinkingKeys(params.domain, network, walletSeed);
   if (keysRes.isErr()) {
     return err(keysRes.error);
@@ -85,18 +84,43 @@ export const createAuthCallbackUrl = async (
 };
 
 /**
- * Creates a withdraw callback URL
- * @param callback
+ * Creates a withdraw callback URL once user's invoice
+ * is ready to be paid
  * @param k1
+ * @param callback
  * @param invoice
- * @returns {Ok<string>}
+ * @return {Ok<string>}
  */
-export const createWithdrawCallbackUrl = (
-  callback: string,
-  k1: string,
-  invoice: string,
-): Result<string> => {
+export const createWithdrawCallbackUrl = ({
+  params: {k1, callback},
+  invoice,
+}: WithdrawCallback): Result<string> => {
   return ok(
     `${callback}${callback.endsWith('?') ? '' : '?'}&k1=${k1}&pr=${invoice}`,
+  );
+};
+
+/**
+ * Creates a channel request callback URL to call
+ * after LN node has made it's connection.
+ * @param k1
+ * @param callback
+ * @param localNodeId
+ * @param isPrivate
+ * @param cancel
+ * @returns {Ok<string>}
+ */
+export const createChannelRequestUrl = ({
+  params: {k1, callback},
+  localNodeId,
+  isPrivate,
+  cancel,
+}: ChannelCallback): Result<string> => {
+  return ok(
+    `${callback}${
+      callback.endsWith('?') ? '' : '?'
+    }&k1=${k1}&remoteid=${localNodeId}&private=${
+      isPrivate ? '1' : '0'
+    }&cancel=${cancel ? '1' : '0'}`,
   );
 };
