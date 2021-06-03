@@ -1,3 +1,5 @@
+import { LNURLAuthParams, LNURLChannelParams, LNURLPayParams, LNURLWithdrawParams } from 'js-lnurl';
+
 export enum EAvailableNetworks {
 	bitcoin = 'bitcoin',
 	bitcoinTestnet = 'bitcoinTestnet'
@@ -46,4 +48,30 @@ export const networks: INetworks = {
 		scriptHash: 0xc4,
 		wif: 0xef
 	}
+};
+
+export type AuthCallback = {
+	network: EAvailableNetworks;
+	params: LNURLAuthParams;
+	bip32Mnemonic: string;
+	bip39Passphrase?: string;
+};
+
+export type WithdrawCallback = {
+	params: LNURLWithdrawParams;
+	paymentRequest: string;
+};
+
+export type ChannelCallback = {
+	params: LNURLChannelParams;
+	localNodeId: string;
+	isPrivate: boolean;
+	cancel: boolean;
+};
+
+export type PayCallback = {
+	params: LNURLPayParams;
+	milliSats: number;
+	fromNodes?: string[];
+	comment: string;
 };

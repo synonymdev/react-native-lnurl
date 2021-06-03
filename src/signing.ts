@@ -26,34 +26,40 @@ export const deriveLinkingKeys = (
 	mnemonic: string,
 	bip39Passphrase?: string
 ): Result<DerivedLinkingKeys> => {
-	const seed = bip39.mnemonicToSeedSync(mnemonic, bip39Passphrase);
-	const root = bip32.fromSeed(seed, networks[network]);
-	/*
-Source: https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/src/networks.js
-List of address prefixes: https://en.bitcoin.it/wiki/List_of_address_prefixes
- */
+	try {
+		const seed = bip39.mnemonicToSeedSync(mnemonic, bip39Passphrase);
 
-	// STEP 1 - Get hashing key
-	const hashingKey = root.derivePath("m/138'/0").privateKey?.toString('hex');
-	if (!hashingKey) {
-		return err('Failed to derive hashingKey');
+		const root = bip32.fromSeed(seed, networks[network]);
+
+		/*
+		Source: https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/src/networks.js
+		List of address prefixes: https://en.bitcoin.it/wiki/List_of_address_prefixes
+		 */
+
+		// STEP 1 - Get hashing key
+		const hashingKey = root.derivePath("m/138'/0").privateKey?.toString('hex');
+		if (!hashingKey) {
+			return err('Failed to derive hashingKey');
+		}
+
+		// STEP 2 - hmacSha256 domain
+		const hmac = new Sha256HMAC(stringToBytes(hashingKey ?? ''));
+		const derivationMaterial = hmac.update(stringToBytes(domain)).digest();
+
+		// STEP 3 - First 16 bytes are taken from resulting hash and then turned into a sequence of 4 Long values which are in turn used to derive a service-specific linkingKey using m/138'/<long1>/<long2>/<long3>/<long4> path
+		let path = "m/138'";
+		for (let index = 0; index < 4; index++) {
+			path = `${path}/${bytesToLong(derivationMaterial.slice(index * 4, index * 4 + 4))}`;
+		}
+
+		const derivePrivateKey = root.derivePath(path);
+		const privateKey = derivePrivateKey.privateKey?.toString('hex') ?? '';
+		const publicKey = derivePrivateKey.publicKey?.toString('hex') ?? '';
+
+		return ok({ privateKey, publicKey });
+	} catch (e) {
+		return err(e);
 	}
-
-	// STEP 2 - hmacSha256 domain
-	const hmac = new Sha256HMAC(stringToBytes(hashingKey));
-	const derivationMaterial = hmac.update(stringToBytes(domain)).digest();
-
-	// STEP 3 - First 16 bytes are taken from resulting hash and then turned into a sequence of 4 Long values which are in turn used to derive a service-specific linkingKey using m/138'/<long1>/<long2>/<long3>/<long4> path
-	let path = "m/138'";
-	for (let index = 0; index < 4; index++) {
-		path = `${path}/${bytesToLong(derivationMaterial.slice(index * 4, index * 4 + 4))}`;
-	}
-
-	const derivePrivateKey = root.derivePath(path);
-	const privateKey = derivePrivateKey.privateKey?.toString('hex') ?? '';
-	const publicKey = derivePrivateKey.publicKey?.toString('hex') ?? '';
-
-	return ok({ privateKey, publicKey });
 };
 
 /**

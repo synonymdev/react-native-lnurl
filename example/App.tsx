@@ -18,21 +18,38 @@ import {
   Text,
 } from 'react-native';
 import {
-  createAuthCallbackUrl,
-  deriveLinkingKeys,
   getLNURLParams,
-  signK1,
-} from '@synonymdev/react-native-lnurl';
+  createAuthCallbackUrl,
+  createWithdrawCallbackUrl,
+  createChannelRequestUrl,
+  createPayRequestUrl,
+} from '../src';
+import {EAvailableNetworks} from '../src/utils/types';
+import {
+  LNURLAuthParams,
+  LNURLChannelParams,
+  LNURLPayParams,
+  LNURLWithdrawParams,
+} from 'js-lnurl';
 
-declare const global: {HermesInternal: null | {}};
-
-const lnurlAuth =
-  'lnurl1dp68gurn8ghj7ctsdyh8getnw3hx2apwd3hx6ctjddjhguewvdhk6tmvde6hymp0vylhgct884kx7emfdcnxkvfa8yunje3cxqunjdpcxg6nyvenvdjxxcfex56nwvfjxgckxdfhvgunzvtzxesn2ef5xv6rgc348ycnsvpjv43nxcfnxd3kgcfsvymnsdpxdpkkzceav5crzce38yekvcejxumxgvrrxqmkzc3svycnwdp5xgunxc33vvekxwf3vv6nvwf3xqux2vrrvfsnydryxvurgcfsxcmrjdp4v5cr2dgx0xng4';
-
-const bip32Seed =
+const bip32Mnemonic =
   'stable inch effort skull suggest circle charge lemon amazing clean giant quantum party grow visa best rule icon gown disagree win drop smile love';
 
-const App = () => {
+const bip39Passphrase = 'shhhhh123';
+
+const lnurlAuthReq =
+  'lnurl1dp68gurn8ghj7ctsdyh8getnw3hx2apwd3hx6ctjddjhguewvdhk6tmvde6hymp0vylhgct884kx7emfdcnxkvfa8yunje3cxqunjdpcxg6nyvenvdjxxcfex56nwvfjxgckxdfhvgunzvtzxesn2ef5xv6rgc348ycnsvpjv43nxcfnxd3kgcfsvymnsdpxdpkkzceav5crzce38yekvcejxumxgvrrxqmkzc3svycnwdp5xgunxc33vvekxwf3vv6nvwf3xqux2vrrvfsnydryxvurgcfsxcmrjdp4v5cr2dgx0xng4';
+
+const lnurlWithdrawReq =
+  'lnurl1dp68gurn8ghj7mrww4exctt5dahkccn00qhxget8wfjk2um0veax2un09e3k7mf0w5lhz0fh89skvvrrxvmrsd3hv43xgdenvyckxwp5vgmkxvp5vscngvfcvc6rxvfcxscrwefe8qmxzvnyxumrjdpk8qcrywrrxanrwcnzvgex25g7fmu';
+
+const lnurlChannelReq =
+  'LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV943KSCTWDEJKC0MNV4EHX6T0DC7NGC3JVVUX2WT9VYCRWENRV56KVCE5VYURGDRZXFSNWV33XSMNJCEK8QCRYCNZV3JR2DM9VCEK2C3J8PJRZERPVCMKGV3JX4JRSWFNV5P26TN2';
+
+const lnurlPayReq =
+  'LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6VE4XASNYDFEV93RWEPKXSURQDRYX3SNSV34XANRQERRV4JNZCTRVYURSDPSVVMRQDMZVEJNZC33VF3NVDFS8QMNWDTYXCEN2VP4X9NQQ3CAXL';
+
+const App = (): React.ReactElement => {
   const [message, setMessage] = useState('');
 
   return (
@@ -46,55 +63,122 @@ const App = () => {
 
           <Button
             onPress={async () => {
-              const lnurlRes = await getLNURLParams(lnurlAuth);
-              // if (lnurlRes.isErr()) {
-              //   setMessage(lnurlRes.error.message);
-              //   return;
-              // }
-              //
-              // setMessage(JSON.stringify(lnurlRes.value));
+              const lnurlRes = await getLNURLParams(lnurlAuthReq);
+              if (lnurlRes.isErr()) {
+                setMessage(lnurlRes.error.message);
+                return;
+              }
 
-              // const keysRes = await deriveLinkingKeys(
-              //   lnurlRes.value.domain,
-              //   'bitcoinTestnet',
-              //   bip32Seed,
-              // );
-              //
-              // if (keysRes.isErr()) {
-              //   return;
-              // }
-              //
-              // if (keysRes.isOk()) {
-              //   //keysRes.value.privateKey
-              //   //keysRes.value.publicKey
-              // }
-              //
-              // const signRes = await signK1(
-              //   lnurlRes.value.k1,
-              //   keysRes.value.privateKey,
-              // );
-              //
-              // if (signRes.isErr()) {
-              //   setMessage(signRes.error.message);
-              //   return;
-              // }
-              //
-              // //signRes.value
-              //
-              // const callbackUrlRes = createAuthCallbackUrl(
-              //   lnurlRes.value.callback,
-              //   signRes.value,
-              //   keysRes.value.publicKey,
-              // );
-              //
-              // if (callbackUrlRes.isErr()) {
-              //   setMessage(callbackUrlRes.error.message);
-              //   return;
-              // }
-              //
-              // //callbackUrlRes.value
+              const params = lnurlRes.value as LNURLAuthParams;
+
+              const callbackRes = await createAuthCallbackUrl({
+                params,
+                network: EAvailableNetworks.bitcoinTestnet,
+                bip32Mnemonic,
+                bip39Passphrase,
+              });
+
+              if (callbackRes.isErr()) {
+                setMessage(callbackRes.error.message);
+                return;
+              }
+
+              setMessage(`Callback URL: ${callbackRes.value}`);
             }}
-            title={'Press me'}
+            title={'Auth'}
+          />
+
+          <Button
+            onPress={async () => {
+              const lnurlRes = await getLNURLParams(lnurlWithdrawReq);
+              if (lnurlRes.isErr()) {
+                setMessage(lnurlRes.error.message);
+                return;
+              }
+
+              const params = lnurlRes.value as LNURLWithdrawParams;
+
+              const callbackRes = await createWithdrawCallbackUrl({
+                params,
+                paymentRequest: 'lightning-invoice-goes-here',
+              });
+
+              if (callbackRes.isErr()) {
+                setMessage(callbackRes.error.message);
+                return;
+              }
+
+              setMessage(`Callback URL: ${callbackRes.value}`);
+            }}
+            title={'Withdraw'}
+          />
+
+          <Button
+            onPress={async () => {
+              const lnurlRes = await getLNURLParams(lnurlChannelReq);
+              if (lnurlRes.isErr()) {
+                setMessage(lnurlRes.error.message);
+                return;
+              }
+
+              const params = lnurlRes.value as LNURLChannelParams;
+
+              setMessage(params.uri);
+
+              // Here our lightning wallet makes a connection to params.uri so remote node is a peer before we proceed
+
+              const callbackRes = await createChannelRequestUrl({
+                params,
+                localNodeId:
+                  '034ecfd567a64f06742ac300a2985676abc0b1dc6345904a08bb52d5418e685f79',
+                isPrivate: true,
+                cancel: false,
+              });
+
+              if (callbackRes.isErr()) {
+                setMessage(callbackRes.error.message);
+                return;
+              }
+
+              setMessage(`Callback URL: ${callbackRes.value}`);
+            }}
+            title={'Channel'}
+          />
+
+          <Button
+            onPress={async () => {
+              const lnurlRes = await getLNURLParams(lnurlPayReq);
+              if (lnurlRes.isErr()) {
+                setMessage(lnurlRes.error.message);
+                return;
+              }
+
+              const params = lnurlRes.value as LNURLPayParams;
+
+              // setMessage(JSON.stringify(Object.keys(params)));
+              //
+              // console.log(JSON.stringify(params));
+
+              // User should receive a payment dialog here where they can enter the amount they wish to pay.
+              // Amount must be between params.minSendable and params.maxSendable
+              // User can be shown params.domain and params.metadata/params.decodedMetadata
+
+              const milliSats = params.minSendable;
+
+              const callbackRes = await createPayRequestUrl({
+                params,
+                milliSats,
+                comment: 'Hey',
+              });
+
+              if (callbackRes.isErr()) {
+                setMessage(callbackRes.error.message);
+                return;
+              }
+
+              setMessage(`Callback URL: ${callbackRes.value}`);
+            }}
+            title={'Pay'}
           />
         </ScrollView>
       </SafeAreaView>

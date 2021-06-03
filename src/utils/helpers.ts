@@ -67,3 +67,16 @@ export const bytesToLong = (bytes: Uint8Array): number => {
 
 	return value;
 };
+
+/**
+ * Random nonce to prevent URL's from caching
+ * @returns {string}
+ */
+export const randomNonce = (): string => {
+	let text = '';
+	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	for (let i = 0; i < 8; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
+};
