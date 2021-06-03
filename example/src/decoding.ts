@@ -8,7 +8,13 @@ import {
 } from 'js-lnurl';
 import {err, ok, Result} from './utils/result';
 import {deriveLinkingKeys, signK1} from './signing';
-import {AuthCallback, ChannelCallback, WithdrawCallback} from './utils/types';
+import {
+  AuthCallback,
+  ChannelCallback,
+  PayCallback,
+  WithdrawCallback,
+} from './utils/types';
+import {randomNonce} from './utils/helpers';
 
 /**
  * Parses LNURL
@@ -65,10 +71,16 @@ export const getLNURLParams = async (
  */
 export const createAuthCallbackUrl = async ({
   params,
-  walletSeed,
   network,
+  bip32Mnemonic,
+  bip39Passphrase,
 }: AuthCallback): Promise<Result<string>> => {
-  const keysRes = await deriveLinkingKeys(params.domain, network, walletSeed);
+  const keysRes = await deriveLinkingKeys(
+    params.domain,
+    network,
+    bip32Mnemonic,
+    bip39Passphrase,
+  );
   if (keysRes.isErr()) {
     return err(keysRes.error);
   }
@@ -93,10 +105,12 @@ export const createAuthCallbackUrl = async ({
  */
 export const createWithdrawCallbackUrl = ({
   params: {k1, callback},
-  invoice,
+  paymentRequest,
 }: WithdrawCallback): Result<string> => {
   return ok(
-    `${callback}${callback.endsWith('?') ? '' : '?'}&k1=${k1}&pr=${invoice}`,
+    `${callback}${
+      callback.endsWith('?') ? '' : '?'
+    }&k1=${k1}&pr=${paymentRequest}`,
   );
 };
 
@@ -122,5 +136,29 @@ export const createChannelRequestUrl = ({
     }&k1=${k1}&remoteid=${localNodeId}&private=${
       isPrivate ? '1' : '0'
     }&cancel=${cancel ? '1' : '0'}`,
+  );
+};
+
+/**
+ * Creates a pay request URL to call to get the invoice from
+ * the remote node
+ * @param callback
+ * @param sats
+ * @param comment
+ * @param fromNodes
+ */
+export const createPayRequestUrl = ({
+  params: {callback},
+  milliSats,
+  comment,
+  fromNodes,
+}: PayCallback): Result<string> => {
+  const nonce = randomNonce();
+  const fromNodesParam = fromNodes ? `&fromnodes=${fromNodes.join(',')}` : '';
+
+  return ok(
+    `${callback}${
+      callback.endsWith('?') ? '' : '?'
+    }&amount=${milliSats}&nonce=${nonce}&comment=${comment}${fromNodesParam}`,
   );
 };

@@ -56,14 +56,15 @@ export const networks: INetworks = {
 };
 
 export type AuthCallback = {
-  walletSeed: string;
   network: EAvailableNetworks;
   params: LNURLAuthParams;
+  bip32Mnemonic: string;
+  bip39Passphrase?: string;
 };
 
 export type WithdrawCallback = {
   params: LNURLWithdrawParams;
-  invoice: string;
+  paymentRequest: string;
 };
 
 export type ChannelCallback = {
@@ -71,4 +72,11 @@ export type ChannelCallback = {
   localNodeId: string;
   isPrivate: boolean;
   cancel: boolean;
+};
+
+export type PayCallback = {
+  params: LNURLPayParams;
+  milliSats: number;
+  fromNodes?: string[];
+  comment: string;
 };

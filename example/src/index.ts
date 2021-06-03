@@ -1,7 +1,21 @@
-import {createWithdrawCallbackUrl, createAuthCallbackUrl} from './decoding';
+import {
+  createWithdrawCallbackUrl,
+  createAuthCallbackUrl,
+  createChannelRequestUrl,
+  createPayRequestUrl,
+} from './decoding';
 
-import {LNURLAuthParams, LNURLWithdrawParams} from 'js-lnurl';
-import {EAvailableNetworks} from './utils/types';
+import {
+  LNURLAuthParams,
+  LNURLChannelParams,
+  LNURLWithdrawParams,
+} from 'js-lnurl';
+import {
+  AuthCallback,
+  ChannelCallback,
+  EAvailableNetworks,
+  PayCallback,
+} from './utils/types';
 import {err, ok, Result} from './utils/result';
 
 const call = async (url: string): Promise<Result<string>> => {
@@ -29,12 +43,10 @@ const call = async (url: string): Promise<Result<string>> => {
  * @param params
  * @returns {Promise<Err<unknown> | Ok<string> | Err<string>>}
  */
-export const lnAuth = async (
-  walletSeed: string,
-  network: EAvailableNetworks,
-  params: LNURLAuthParams,
+export const lnurlAuth = async (
+  details: AuthCallback,
 ): Promise<Result<string>> => {
-  const res = await createAuthCallbackUrl({walletSeed, network, params});
+  const res = await createAuthCallbackUrl(details);
   if (res.isErr()) {
     return err(res.error);
   }
@@ -45,18 +57,33 @@ export const lnAuth = async (
 /**
  * Calls LNURL-WITHDRAW callback with newly created invoice.
  * Url needs to be decoded first so invoice can be created with correct amounts.
- * @param url
- * @param invoice
+ * @param params
+ * @param paymentRequest
+ * @return {Promise<Err<unknown> | Ok<string> | Err<string>>}
  */
-export const lnWithdraw = async (
+export const lnurlWithdraw = async (
   params: LNURLWithdrawParams,
   paymentRequest: string,
 ): Promise<Result<string>> => {
-  const callbackUrlRes = createWithdrawCallbackUrl(
-    params.callback,
-    params.k1,
+  const callbackUrlRes = createWithdrawCallbackUrl({
+    params,
     paymentRequest,
-  );
+  });
+  if (callbackUrlRes.isErr()) {
+    return err(callbackUrlRes.error);
+  }
+
+  return await call(callbackUrlRes.value);
+};
+/**
+ * Calls LNURL-CHANNEL callback with the user's local node ID.
+ * @param details
+ * @return {Promise<Err<unknown> | Ok<string> | Err<string>>}
+ */
+export const lnurlChannel = async (
+  details: ChannelCallback,
+): Promise<Result<string>> => {
+  const callbackUrlRes = createChannelRequestUrl(details);
   if (callbackUrlRes.isErr()) {
     return err(callbackUrlRes.error);
   }
@@ -64,7 +91,25 @@ export const lnWithdraw = async (
   return await call(callbackUrlRes.value);
 };
 
-export const test = (): string => 'test';
+/**
+ * Calls LNURL-PAY callback with the details the
+ * receiver should use in their invoice
+ * @param details
+ * @return {Promise<Err<unknown> | Ok<string> | Err<string>>}
+ */
+export const lnurlPay = async (
+  details: PayCallback,
+): Promise<Result<string>> => {
+  const callbackUrlRes = createPayRequestUrl(details);
+  if (callbackUrlRes.isErr()) {
+    return err(callbackUrlRes.error);
+  }
+
+  return await call(callbackUrlRes.value);
+
+  // TODO Verifies that h tag in provided invoice is a hash of metadata string converted to byte array in UTF-8 encoding.
+  // Verifies that amount in provided invoice equals an amount previously specified by user.
+};
 
 export * from './signing';
 export * from './decoding';

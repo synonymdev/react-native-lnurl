@@ -22,6 +22,8 @@ import {
   createAuthCallbackUrl,
   createWithdrawCallbackUrl,
   createChannelRequestUrl,
+  createPayRequestUrl,
+  lnurlPay,
 } from './src';
 import {EAvailableNetworks} from './src/utils/types';
 import {
@@ -36,17 +38,19 @@ declare const global: {HermesInternal: null | {}};
 const bip32Mnemonic =
   'stable inch effort skull suggest circle charge lemon amazing clean giant quantum party grow visa best rule icon gown disagree win drop smile love';
 
-const lnurlAuth =
+const bip39Passphrase = 'shhhhh123';
+
+const lnurlAuthReq =
   'lnurl1dp68gurn8ghj7ctsdyh8getnw3hx2apwd3hx6ctjddjhguewvdhk6tmvde6hymp0vylhgct884kx7emfdcnxkvfa8yunje3cxqunjdpcxg6nyvenvdjxxcfex56nwvfjxgckxdfhvgunzvtzxesn2ef5xv6rgc348ycnsvpjv43nxcfnxd3kgcfsvymnsdpxdpkkzceav5crzce38yekvcejxumxgvrrxqmkzc3svycnwdp5xgunxc33vvekxwf3vv6nvwf3xqux2vrrvfsnydryxvurgcfsxcmrjdp4v5cr2dgx0xng4';
 
-const lnurlWithdraw =
+const lnurlWithdrawReq =
   'lnurl1dp68gurn8ghj7mrww4exctt5dahkccn00qhxget8wfjk2um0veax2un09e3k7mf0w5lhz0fh89skvvrrxvmrsd3hv43xgdenvyckxwp5vgmkxvp5vscngvfcvc6rxvfcxscrwefe8qmxzvnyxumrjdpk8qcrywrrxanrwcnzvgex25g7fmu';
 
-const lnurlChannel =
+const lnurlChannelReq =
   'LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV943KSCTWDEJKC0MNV4EHX6T0DC7NGC3JVVUX2WT9VYCRWENRV56KVCE5VYURGDRZXFSNWV33XSMNJCEK8QCRYCNZV3JR2DM9VCEK2C3J8PJRZERPVCMKGV3JX4JRSWFNV5P26TN2';
 
-const lnurlPay =
-  'LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV943KSCTWDEJKC0MNV4EHX6T0DC7NJDPN8Y6RSWPCVVCKYDMZXGUN2DE3XE3XVCM9XCURQETZX5ERQCMRXS6K2CEE8YUNVWF3VG6NQVMYXDJNWDN9X5ENVVFSV56XVDNZVC7YX7TT';
+const lnurlPayReq =
+  'LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6VE4XASNYDFEV93RWEPKXSURQDRYX3SNSV34XANRQERRV4JNZCTRVYURSDPSVVMRQDMZVEJNZC33VF3NVDFS8QMNWDTYXCEN2VP4X9NQQ3CAXL';
 
 //./ngrok tcp 9735
 
@@ -68,17 +72,20 @@ const App = () => {
 
           <Button
             onPress={async () => {
-              const lnurlRes = await getLNURLParams(lnurlAuth);
+              const lnurlRes = await getLNURLParams(lnurlAuthReq);
               if (lnurlRes.isErr()) {
                 setMessage(lnurlRes.error.message);
                 return;
               }
 
-              const callbackRes = await createAuthCallbackUrl(
+              const params = lnurlRes.value as LNURLAuthParams;
+
+              const callbackRes = await createAuthCallbackUrl({
+                params,
+                network: EAvailableNetworks.bitcoinTestnet,
                 bip32Mnemonic,
-                EAvailableNetworks.bitcoinTestnet,
-                lnurlRes.value as LNURLAuthParams,
-              );
+                bip39Passphrase,
+              });
 
               if (callbackRes.isErr()) {
                 setMessage(callbackRes.error.message);
@@ -92,7 +99,7 @@ const App = () => {
 
           <Button
             onPress={async () => {
-              const lnurlRes = await getLNURLParams(lnurlWithdraw);
+              const lnurlRes = await getLNURLParams(lnurlWithdrawReq);
               if (lnurlRes.isErr()) {
                 setMessage(lnurlRes.error.message);
                 return;
@@ -102,7 +109,7 @@ const App = () => {
 
               const callbackRes = await createWithdrawCallbackUrl({
                 params,
-                invoice: 'lightning-invoice-goes-here',
+                paymentRequest: 'lightning-invoice-goes-here',
               });
 
               if (callbackRes.isErr()) {
@@ -117,7 +124,7 @@ const App = () => {
 
           <Button
             onPress={async () => {
-              const lnurlRes = await getLNURLParams(lnurlChannel);
+              const lnurlRes = await getLNURLParams(lnurlChannelReq);
               if (lnurlRes.isErr()) {
                 setMessage(lnurlRes.error.message);
                 return;
@@ -149,7 +156,7 @@ const App = () => {
 
           <Button
             onPress={async () => {
-              const lnurlRes = await getLNURLParams(lnurlPay);
+              const lnurlRes = await getLNURLParams(lnurlPayReq);
               if (lnurlRes.isErr()) {
                 setMessage(lnurlRes.error.message);
                 return;
@@ -157,23 +164,28 @@ const App = () => {
 
               const params = lnurlRes.value as LNURLPayParams;
 
-              setMessage(JSON.stringify(Object.keys(params)));
-
-              console.log(JSON.stringify(params));
-
+              // setMessage(JSON.stringify(Object.keys(params)));
               //
-              // const callbackRes = await createWithdrawCallbackUrl(
-              //   params.callback,
-              //   params.k1,
-              //   'lightning-invoice-goes-here',
-              // );
-              //
-              // if (callbackRes.isErr()) {
-              //   setMessage(callbackRes.error.message);
-              //   return;
-              // }
+              // console.log(JSON.stringify(params));
 
-              // setMessage(`Callback URL: ${callbackRes.value}`);
+              // User should receive a payment dialog here where they can enter the amount they wish to pay.
+              // Amount must be between params.minSendable and params.maxSendable
+              // User can be shown params.domain and params.metadata/params.decodedMetadata
+
+              const milliSats = params.minSendable;
+
+              const callbackRes = await lnurlPay({
+                params,
+                milliSats,
+                comment: 'Hey',
+              });
+
+              if (callbackRes.isErr()) {
+                setMessage(callbackRes.error.message);
+                return;
+              }
+
+              setMessage(`Callback URL: ${callbackRes.value}`);
             }}
             title={'Pay'}
           />

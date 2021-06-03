@@ -1,14 +1,19 @@
 import * as bip39 from 'bip39';
 import * as bip32 from 'bip32';
-import { HMAC as Sha256HMAC } from 'fast-sha256';
+import {HMAC as Sha256HMAC} from 'fast-sha256';
 import secp256k1 from 'secp256k1';
-import { bytesToHexString, hexStringToBytes, stringToBytes, bytesToLong } from './utils/helpers';
-import { Result, err, ok } from './utils/result';
-import { EAvailableNetworks, networks } from './utils/types';
+import {
+  bytesToHexString,
+  hexStringToBytes,
+  stringToBytes,
+  bytesToLong,
+} from './utils/helpers';
+import {Result, err, ok} from './utils/result';
+import {EAvailableNetworks, networks} from './utils/types';
 
 type DerivedLinkingKeys = {
-	privateKey: string;
-	publicKey: string;
+  privateKey: string;
+  publicKey: string;
 };
 
 /**
@@ -21,45 +26,47 @@ type DerivedLinkingKeys = {
  * @returns {Err<unknown> | Ok<{privateKey: string, publicKey: string}>}
  */
 export const deriveLinkingKeys = (
-	domain: string,
-	network: EAvailableNetworks,
-	mnemonic: string,
-	bip39Passphrase?: string
+  domain: string,
+  network: EAvailableNetworks,
+  mnemonic: string,
+  bip39Passphrase?: string,
 ): Result<DerivedLinkingKeys> => {
-	try {
-		const seed = bip39.mnemonicToSeedSync(mnemonic, bip39Passphrase);
+  try {
+    const seed = bip39.mnemonicToSeedSync(mnemonic, bip39Passphrase);
 
-		const root = bip32.fromSeed(seed, networks[network]);
+    const root = bip32.fromSeed(seed, networks[network]);
 
-		/*
+    /*
 		Source: https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/src/networks.js
 		List of address prefixes: https://en.bitcoin.it/wiki/List_of_address_prefixes
 		 */
 
-		// STEP 1 - Get hashing key
-		const hashingKey = root.derivePath("m/138'/0").privateKey?.toString('hex');
-		if (!hashingKey) {
-			return err('Failed to derive hashingKey');
-		}
+    // STEP 1 - Get hashing key
+    const hashingKey = root.derivePath("m/138'/0").privateKey?.toString('hex');
+    if (!hashingKey) {
+      return err('Failed to derive hashingKey');
+    }
 
-		// STEP 2 - hmacSha256 domain
-		const hmac = new Sha256HMAC(stringToBytes(hashingKey ?? ''));
-		const derivationMaterial = hmac.update(stringToBytes(domain)).digest();
+    // STEP 2 - hmacSha256 domain
+    const hmac = new Sha256HMAC(stringToBytes(hashingKey ?? ''));
+    const derivationMaterial = hmac.update(stringToBytes(domain)).digest();
 
-		// STEP 3 - First 16 bytes are taken from resulting hash and then turned into a sequence of 4 Long values which are in turn used to derive a service-specific linkingKey using m/138'/<long1>/<long2>/<long3>/<long4> path
-		let path = "m/138'";
-		for (let index = 0; index < 4; index++) {
-			path = `${path}/${bytesToLong(derivationMaterial.slice(index * 4, index * 4 + 4))}`;
-		}
+    // STEP 3 - First 16 bytes are taken from resulting hash and then turned into a sequence of 4 Long values which are in turn used to derive a service-specific linkingKey using m/138'/<long1>/<long2>/<long3>/<long4> path
+    let path = "m/138'";
+    for (let index = 0; index < 4; index++) {
+      path = `${path}/${bytesToLong(
+        derivationMaterial.slice(index * 4, index * 4 + 4),
+      )}`;
+    }
 
-		const derivePrivateKey = root.derivePath(path);
-		const privateKey = derivePrivateKey.privateKey?.toString('hex') ?? '';
-		const publicKey = derivePrivateKey.publicKey?.toString('hex') ?? '';
+    const derivePrivateKey = root.derivePath(path);
+    const privateKey = derivePrivateKey.privateKey?.toString('hex') ?? '';
+    const publicKey = derivePrivateKey.publicKey?.toString('hex') ?? '';
 
-		return ok({ privateKey, publicKey });
-	} catch (e) {
-		return err(e);
-	}
+    return ok({privateKey, publicKey});
+  } catch (e) {
+    return err(e);
+  }
 };
 
 /**
@@ -69,12 +76,18 @@ export const deriveLinkingKeys = (
  * @param linkingPrivateKey
  * @returns {Ok<string>}
  */
-export const signK1 = (k1: string, linkingPrivateKey: string): Result<string> => {
-	const sigObj = secp256k1.ecdsaSign(hexStringToBytes(k1), hexStringToBytes(linkingPrivateKey));
+export const signK1 = (
+  k1: string,
+  linkingPrivateKey: string,
+): Result<string> => {
+  const sigObj = secp256k1.ecdsaSign(
+    hexStringToBytes(k1),
+    hexStringToBytes(linkingPrivateKey),
+  );
 
-	// Get signature
-	const signature = secp256k1.signatureExport(sigObj.signature);
-	const encodedSignature = bytesToHexString(signature);
+  // Get signature
+  const signature = secp256k1.signatureExport(sigObj.signature);
+  const encodedSignature = bytesToHexString(signature);
 
-	return ok(encodedSignature);
+  return ok(encodedSignature);
 };
