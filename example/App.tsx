@@ -23,17 +23,14 @@ import {
   createWithdrawCallbackUrl,
   createChannelRequestUrl,
   createPayRequestUrl,
-  lnurlPay,
-} from './src';
-import {EAvailableNetworks} from './src/utils/types';
+} from '../src';
+import {EAvailableNetworks} from '../src/utils/types';
 import {
   LNURLAuthParams,
   LNURLChannelParams,
   LNURLPayParams,
   LNURLWithdrawParams,
 } from 'js-lnurl';
-
-declare const global: {HermesInternal: null | {}};
 
 const bip32Mnemonic =
   'stable inch effort skull suggest circle charge lemon amazing clean giant quantum party grow visa best rule icon gown disagree win drop smile love';
@@ -52,13 +49,7 @@ const lnurlChannelReq =
 const lnurlPayReq =
   'LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6VE4XASNYDFEV93RWEPKXSURQDRYX3SNSV34XANRQERRV4JNZCTRVYURSDPSVVMRQDMZVEJNZC33VF3NVDFS8QMNWDTYXCEN2VP4X9NQQ3CAXL';
 
-//./ngrok tcp 9735
-
-//0.0.0.0:8080
-
-//https://22d576d62986.ngrok.io:8080
-//0201036C6E640258030A1087C72B6F6B2D78D2CAB2EAD9586EE6FC1201301A160A0761646472657373120472656164120577726974651A170A08696E766F69636573120472656164120577726974651A0F0A076F6E636861696E120472656164000006206E04819D9B53D8A5952CBE8C32B20A0B7895A8CC38C0C767A254B8D20AC43043
-const App = () => {
+const App = (): React.ReactElement => {
   const [message, setMessage] = useState('');
 
   return (
@@ -134,7 +125,7 @@ const App = () => {
 
               setMessage(params.uri);
 
-              //Here our lightning wallet makes a connection to params.uri so remote node is a peer before we proceed
+              // Here our lightning wallet makes a connection to params.uri so remote node is a peer before we proceed
 
               const callbackRes = await createChannelRequestUrl({
                 params,
@@ -174,7 +165,7 @@ const App = () => {
 
               const milliSats = params.minSendable;
 
-              const callbackRes = await lnurlPay({
+              const callbackRes = await createPayRequestUrl({
                 params,
                 milliSats,
                 comment: 'Hey',
