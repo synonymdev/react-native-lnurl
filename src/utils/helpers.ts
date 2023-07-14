@@ -1,3 +1,23 @@
+import queryString from 'query-string';
+
+/**
+ * Add query params to given url
+ * @param url
+ * @param params
+ * @returns {string}
+ */
+export const addUrlParams = (
+	url: string,
+	params: queryString.StringifiableRecord,
+	options?: queryString.StringifyOptions
+): string => {
+	const parsed = queryString.parseUrl(url, options);
+	Object.entries(params).forEach(([k, v]) => {
+		parsed.query[k] = String(v);
+	});
+	return queryString.stringifyUrl(parsed, options);
+};
+
 /**
  * Convert string to bytes
  * @param str

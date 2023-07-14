@@ -6,10 +6,11 @@ import {
 	LNURLResponse,
 	LNURLWithdrawParams
 } from 'js-lnurl';
+
 import { err, ok, Result } from './utils/result';
 import { deriveLinkingKeys, signK1 } from './signing';
 import { AuthCallback, ChannelCallback, PayCallback, WithdrawCallback } from './utils/types';
-import { randomNonce } from './utils/helpers';
+import { randomNonce, addUrlParams } from './utils/helpers';
 
 /**
  * Parses LNURL
@@ -76,7 +77,7 @@ export const createAuthCallbackUrl = async ({
 		return err(signRes.error);
 	}
 
-	return ok(`${params.callback}&sig=${signRes.value}&key=${keysRes.value.publicKey}`);
+	return ok(addUrlParams(params.callback, { key: keysRes.value.publicKey, sig: signRes.value }));
 };
 
 /**
@@ -91,7 +92,7 @@ export const createWithdrawCallbackUrl = ({
 	params: { k1, callback },
 	paymentRequest
 }: WithdrawCallback): Result<string> => {
-	return ok(`${callback}${callback.endsWith('?') ? '' : '?'}&k1=${k1}&pr=${paymentRequest}`);
+	return ok(addUrlParams(callback, { k1, pr: paymentRequest }));
 };
 
 /**
@@ -111,9 +112,12 @@ export const createChannelRequestUrl = ({
 	cancel
 }: ChannelCallback): Result<string> => {
 	return ok(
-		`${callback}${callback.endsWith('?') ? '' : '?'}&k1=${k1}&remoteid=${localNodeId}&private=${
-			isPrivate ? '1' : '0'
-		}&cancel=${cancel ? '1' : '0'}`
+		addUrlParams(callback, {
+			k1,
+			remoteid: localNodeId,
+			private: isPrivate ? '1' : '0',
+			cancel: cancel ? '1' : '0'
+		})
 	);
 };
 
@@ -132,11 +136,12 @@ export const createPayRequestUrl = ({
 	fromNodes
 }: PayCallback): Result<string> => {
 	const nonce = randomNonce();
-	const fromNodesParam = fromNodes ? `&fromnodes=${fromNodes.join(',')}` : '';
 
 	return ok(
-		`${callback}${
-			callback.endsWith('?') ? '' : '?'
-		}&amount=${milliSats}&nonce=${nonce}&comment=${comment}${fromNodesParam}`
+		addUrlParams(
+			callback,
+			{ amount: milliSats, nonce, comment, fromnodes: fromNodes },
+			{ arrayFormat: 'comma' }
+		)
 	);
 };
