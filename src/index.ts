@@ -1,11 +1,11 @@
+import { LNURLWithdrawParams, LNURLPayResult } from 'js-lnurl';
+
 import {
 	createWithdrawCallbackUrl,
 	createAuthCallbackUrl,
 	createChannelRequestUrl,
 	createPayRequestUrl
 } from './decoding';
-
-import { LNURLWithdrawParams } from 'js-lnurl';
 import { AuthCallback, ChannelCallback, PayCallback } from './utils/types';
 import { err, ok, Result } from './utils/result';
 
@@ -18,13 +18,35 @@ const call = async (url: string): Promise<Result<string>> => {
 		return err('Unknown HTTP error');
 	}
 
-	if ((body.status || '').toUpperCase() === 'OK') {
+	if (body?.status?.toUpperCase() === 'OK') {
 		return ok('Authenticated');
-	} else if ((body.status || '').toUpperCase() === 'ERROR') {
+	}
+
+	if (body?.status?.toUpperCase() === 'ERROR') {
 		return err(body.reason);
 	}
 
 	return err('Unknown error');
+};
+
+const callLnurlPay = async (url: string): Promise<Result<LNURLPayResult>> => {
+	const fetchRes = await fetch(url);
+
+	const body: { status: string; reason: string } & LNURLPayResult = await fetchRes.json();
+
+	if (!body) {
+		return err('Unknown HTTP error');
+	}
+
+	if (body?.status?.toUpperCase() === 'ERROR') {
+		return err(body.reason);
+	}
+
+	if (!(typeof body.pr === 'string') || !Array.isArray(body.routes)) {
+		return err('LNURL pay response is invalid');
+	}
+
+	return ok(body);
 };
 
 /**
@@ -84,14 +106,13 @@ export const lnurlChannel = async (details: ChannelCallback): Promise<Result<str
  * @param details
  * @return {Promise<Err<unknown> | Ok<string> | Err<string>>}
  */
-export const lnurlPay = async (details: PayCallback): Promise<Result<string>> => {
+export const lnurlPay = async (details: PayCallback): Promise<Result<LNURLPayResult>> => {
 	const callbackUrlRes = createPayRequestUrl(details);
 	if (callbackUrlRes.isErr()) {
 		return err(callbackUrlRes.error);
 	}
 
-	return await call(callbackUrlRes.value);
-
+	return await callLnurlPay(callbackUrlRes.value);
 	// TODO verify that h tag in provided invoice is a hash of metadata string converted to byte array in UTF-8 encoding.
 	// TODO verify that amount in provided invoice equals an amount previously specified by user.
 };
