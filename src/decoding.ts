@@ -6,6 +6,8 @@ import {
 	LNURLResponse,
 	LNURLWithdrawParams
 } from 'js-lnurl';
+// @ts-ignore
+import { bech32 } from 'bech32';
 
 import { err, ok, Result } from './utils/result';
 import { deriveLinkingKeys, signK1 } from './signing';
@@ -144,4 +146,30 @@ export const createPayRequestUrl = ({
 			{ arrayFormat: 'comma' }
 		)
 	);
+};
+
+/**
+ * Converts a LNURL-address to a LNURL-pay url,
+ * calls it and returns the LNURL-pay params
+ * @param address
+ * @return {Promise<Result<LNURLPayParams>>}
+ */
+export const lnurlAddress = async (address: string): Promise<Result<LNURLPayParams>> => {
+	const splitted = address.split('@');
+	if (splitted.length !== 2) {
+		return err('Invalid Lightning address');
+	}
+
+	const username = splitted[0].trim();
+	const host = splitted[1].trim();
+
+	if (host.match(/\.onion$/)) {
+		return err('Onion addresses are not supported');
+	}
+
+	const url = `https://${host}/.well-known/lnurlp/${username}`;
+	const words = bech32.toWords(Buffer.from(url, 'utf8'));
+	const urlEncoded = bech32.encode('lnurl', words, 1023);
+	const params = (await getLNURLParams(urlEncoded)) as Result<LNURLPayParams>;
+	return params;
 };
