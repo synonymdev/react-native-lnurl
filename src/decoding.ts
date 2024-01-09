@@ -6,13 +6,16 @@ import {
 	LNURLResponse,
 	LNURLWithdrawParams
 } from 'js-lnurl';
-// @ts-ignore
-import { bech32 } from 'bech32';
 
 import { err, ok, Result } from './utils/result';
 import { deriveLinkingKeys, signK1 } from './signing';
 import { AuthCallback, ChannelCallback, PayCallback, WithdrawCallback } from './utils/types';
 import { randomNonce, addUrlParams } from './utils/helpers';
+
+// @ts-expect-error: bech32 types are not up to date
+import { bech32 as bech32Import } from 'bech32';
+import * as bech32Type from 'bech32';
+const bech32 = bech32Import as typeof bech32Type;
 
 /**
  * Parses LNURL
