@@ -42,8 +42,18 @@ const callLnurlPay = async (url: string): Promise<Result<LNURLPayResult>> => {
 		return err(body.reason);
 	}
 
-	if (!(typeof body.pr === 'string') || !Array.isArray(body.routes)) {
-		return err('LNURL pay response is invalid');
+	if (!(typeof body.pr === 'string')) {
+		return err('LNURL pay response is invalid. "pr" is missing.');
+	}
+
+	// "routes" field is required by https://github.com/lnurl/luds/blob/luds/06.md
+	// but we don't really use it
+	if (!body.routes) {
+		body.routes = [];
+	}
+
+	if (!Array.isArray(body.routes)) {
+		return err('LNURL pay response is invalid. "routes" is not an array.');
 	}
 
 	return ok(body);
