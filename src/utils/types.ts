@@ -73,5 +73,5 @@ export type PayCallback = {
 	params: LNURLPayParams;
 	milliSats: number;
 	fromNodes?: string[];
-	comment: string;
+	comment?: string;
 };
