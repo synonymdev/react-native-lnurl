@@ -42,7 +42,11 @@ export const getLNURLParams = async (
 			return err('Unknown error parsing LNURL params');
 		}
 
-		const tag = 'tag' in params ? params.tag : '';
+		if (!('tag' in params)) {
+			return err('Unknown tag');
+		}
+
+		const tag = params.tag;
 
 		switch (tag) {
 			case 'withdrawRequest':
